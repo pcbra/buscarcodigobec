@@ -6,31 +6,40 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from webdriver_manager.chrome import ChromeDriverManager # <-- NOVO IMPORT
 import time
 import random
-import os
 from io import BytesIO
 
 # --- CONFIGURAÇÕES GLOBAIS ---
 URL_PESQUISA = 'https://www.bec.sp.gov.br/BEC_Catalogo_ui/CatalogoPesquisa3.aspx'
-TEMPO_ESPERA_MAXIMO = 20
+TEMPO_ESPERA_MAXIMO = 30 # Aumentado para dar tempo ao ambiente online
 PAUSA_MINIMA = 1
 PAUSA_MAXIMA = 2
 
+# --- NOVA FUNÇÃO CONFIGURAR_DRIVER ---
 @st.cache_resource
 def configurar_driver():
-    """Configura o WebDriver para rodar no ambiente do Streamlit Cloud."""
+    """
+    Configura o WebDriver para rodar no Streamlit Cloud,
+    usando webdriver-manager para instalar o Chrome/ChromeDriver.
+    """
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
+    options.add_argument("--disable-features=NetworkService")
     options.add_argument("--window-size=1920x1080")
-    # O Streamlit Cloud instala o chromedriver automaticamente
-    service = ChromeService()
+    options.add_argument("--disable-features=VizDisplayCompositor")
+    
+    # Usa webdriver-manager para instalar e configurar o driver automaticamente
+    service = ChromeService(ChromeDriverManager().install())
+    
     driver = webdriver.Chrome(service=service, options=options)
     return driver
 
+# A função buscar_dados permanece a mesma
 def buscar_dados(driver, codigo):
     """Função de scraping para um único código. Retorna um dicionário."""
     try:
@@ -61,7 +70,6 @@ def buscar_dados(driver, codigo):
         return {"status": "erro", "mensagem": f"Erro inesperado: {e}"}
 
 # --- Interface do Aplicativo Web ---
-
 st.set_page_config(page_title="Buscador de Itens BEC", layout="centered")
 st.title("🤖 Buscador de Itens na BEC")
 st.markdown("Faça o upload de um arquivo `.txt` com os códigos dos itens (um por linha) para iniciar a busca.")
@@ -69,7 +77,6 @@ st.markdown("Faça o upload de um arquivo `.txt` com os códigos dos itens (um p
 uploaded_file = st.file_uploader("Escolha o arquivo de códigos:", type="txt")
 
 if uploaded_file is not None:
-    # Ler os códigos do arquivo
     try:
         codigos = [line.decode('utf-8').strip() for line in uploaded_file.readlines() if line.strip()]
         st.success(f"{len(codigos)} códigos carregados com sucesso do arquivo '{uploaded_file.name}'!")
@@ -78,6 +85,7 @@ if uploaded_file is not None:
             if not codigos:
                 st.error("O arquivo está vazio ou não contém códigos válidos.")
             else:
+                st.info("Configurando o ambiente... Isso pode levar um minuto na primeira execução.")
                 driver = configurar_driver()
                 resultados = []
                 
@@ -104,7 +112,6 @@ if uploaded_file is not None:
                 driver.quit()
                 log_area.success("Busca finalizada! O arquivo Excel está pronto para download.")
                 
-                # Criar o arquivo Excel em memória para download
                 df_final = pd.DataFrame(resultados)
                 output = BytesIO()
                 with pd.ExcelWriter(output, engine='openpyxl') as writer:
