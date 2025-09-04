@@ -16,12 +16,12 @@ TEMPO_ESPERA_MAXIMO = 30
 PAUSA_MINIMA = 1
 PAUSA_MAXIMA = 2
 
-# --- FUNÇÃO CONFIGURAR_DRIVER (VERSÃO FINAL PARA STREAMLIT) ---
+# --- FUNÇÃO CONFIGURAR_DRIVER (VERSÃO OTIMIZADA PARA MEMÓRIA) ---
 @st.cache_resource
 def configurar_driver():
     """
-    Configura o WebDriver para rodar no Streamlit Cloud, esperando que
-    o Chrome e o Driver sejam instalados via packages.txt.
+    Configura o WebDriver para rodar no Streamlit Cloud de forma otimizada,
+    com argumentos para economizar memória.
     """
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
@@ -30,6 +30,13 @@ def configurar_driver():
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920x1080")
     
+    # --- NOVAS OPÇÕES PARA ECONOMIA DE MEMÓRIA ---
+    options.add_argument("--disable-extensions") # Desativa extensões
+    options.add_argument("--disable-popup-blocking") # Desativa pop-ups
+    options.add_argument("--disable-infobars") # Desativa as barras de informação
+    options.add_argument("--single-process") # Roda o Chrome em um único processo (grande economia de RAM)
+    options.add_argument("--disable-application-cache") # Desativa o cache que pode consumir memória
+
     # O Streamlit Cloud/Apt-get colocará o chromedriver em um local padrão que o Selenium encontra.
     service = ChromeService()
     
