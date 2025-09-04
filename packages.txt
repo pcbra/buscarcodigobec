@@ -1,9 +1,7 @@
-# Bibliotecas de sistema essenciais
 libgl1-mesa-glx
 libglib2.0-0
 libsm6
 libxext6
 libnss3
 libx11-xcb1
-# O navegador Google Chrome oficial
 google-chrome-stable
