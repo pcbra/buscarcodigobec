@@ -6,35 +6,32 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
-from webdriver_manager.chrome import ChromeDriverManager # <-- NOVO IMPORT
 import time
 import random
 from io import BytesIO
 
 # --- CONFIGURAÇÕES GLOBAIS ---
 URL_PESQUISA = 'https://www.bec.sp.gov.br/BEC_Catalogo_ui/CatalogoPesquisa3.aspx'
-TEMPO_ESPERA_MAXIMO = 30 # Aumentado para dar tempo ao ambiente online
+TEMPO_ESPERA_MAXIMO = 30
 PAUSA_MINIMA = 1
 PAUSA_MAXIMA = 2
 
-# --- NOVA FUNÇÃO CONFIGURAR_DRIVER ---
+# --- FUNÇÃO CONFIGURAR_DRIVER (VERSÃO FINAL PARA STREAMLIT) ---
 @st.cache_resource
 def configurar_driver():
     """
-    Configura o WebDriver para rodar no Streamlit Cloud,
-    usando webdriver-manager para instalar o Chrome/ChromeDriver.
+    Configura o WebDriver para rodar no Streamlit Cloud, esperando que
+    o Chrome e o Driver sejam instalados via packages.txt.
     """
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    options.add_argument("--disable-features=NetworkService")
     options.add_argument("--window-size=1920x1080")
-    options.add_argument("--disable-features=VizDisplayCompositor")
     
-    # Usa webdriver-manager para instalar e configurar o driver automaticamente
-    service = ChromeService(ChromeDriverManager().install())
+    # O Streamlit Cloud/Apt-get colocará o chromedriver em um local padrão que o Selenium encontra.
+    service = ChromeService()
     
     driver = webdriver.Chrome(service=service, options=options)
     return driver
@@ -69,7 +66,7 @@ def buscar_dados(driver, codigo):
     except Exception as e:
         return {"status": "erro", "mensagem": f"Erro inesperado: {e}"}
 
-# --- Interface do Aplicativo Web ---
+# --- Interface do Aplicativo Web (sem alterações) ---
 st.set_page_config(page_title="Buscador de Itens BEC", layout="centered")
 st.title("🤖 Buscador de Itens na BEC")
 st.markdown("Faça o upload de um arquivo `.txt` com os códigos dos itens (um por linha) para iniciar a busca.")
@@ -85,7 +82,7 @@ if uploaded_file is not None:
             if not codigos:
                 st.error("O arquivo está vazio ou não contém códigos válidos.")
             else:
-                st.info("Configurando o ambiente... Isso pode levar um minuto na primeira execução.")
+                st.info("Configurando o ambiente... Isso pode levar um minuto.")
                 driver = configurar_driver()
                 resultados = []
                 
